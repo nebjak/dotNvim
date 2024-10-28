@@ -23,6 +23,10 @@ require("lazy").setup({
     { import = "nebjak.plugins.lsp" },
   },
   -- automatically check for plugin updates
-  checker = { enabled = true },
+  checker = {
+    enabled = true,
+    notify = true,
+    -- every 10 days
+    frequency = 864000,
+  },
 })
-
