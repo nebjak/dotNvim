@@ -34,6 +34,7 @@ return {
         "html",
         "jsonls",
         "rust_analyzer",
+        "tflint",
       },
     })
 
@@ -42,6 +43,7 @@ return {
         "prettier", -- prettier formatter
         "stylua", -- lua formatter
         "eslint_d",
+        "tflint", -- terraform linter
       },
     })
   end,
