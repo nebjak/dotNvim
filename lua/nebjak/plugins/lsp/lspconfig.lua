@@ -5,6 +5,7 @@ return {
     "hrsh7th/cmp-nvim-lsp",
     { "antosha417/nvim-lsp-file-operations", config = true },
     { "folke/neodev.nvim", opts = {} },
+    "b0o/schemastore.nvim", -- JSON schemas for jsonls
   },
   config = function()
     -- import lspconfig plugin
@@ -73,65 +74,157 @@ return {
     -- Change the Diagnostic symbols in the sign column (gutter)
     -- (not in youtube nvim video)
     local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
-    for type, icon in pairs(signs) do
-      local hl = "DiagnosticSign" .. type
-      vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
-    end
-
-    mason_lspconfig.setup_handlers({
-      -- default handler for installed servers
-      function(server_name)
-        lspconfig[server_name].setup({
-          capabilities = capabilities,
-        })
-      end,
-      ["svelte"] = function()
-        -- configure svelte server
-        lspconfig["svelte"].setup({
-          capabilities = capabilities,
-          on_attach = function(client, bufnr)
-            vim.api.nvim_create_autocmd("BufWritePost", {
-              pattern = { "*.js", "*.ts" },
-              callback = function(ctx)
-                -- Here use ctx.match instead of ctx.file
-                client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
-              end,
-            })
-          end,
-        })
-      end,
-      ["graphql"] = function()
-        -- configure graphql language server
-        lspconfig["graphql"].setup({
-          capabilities = capabilities,
-          filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
-        })
-      end,
-      ["emmet_ls"] = function()
-        -- configure emmet language server
-        lspconfig["emmet_ls"].setup({
-          capabilities = capabilities,
-          filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less", "svelte" },
-        })
-      end,
-      ["lua_ls"] = function()
-        -- configure lua server (with special settings)
-        lspconfig["lua_ls"].setup({
-          capabilities = capabilities,
-          settings = {
-            Lua = {
-              -- make the language server recognize "vim" global
-              diagnostics = {
-                globals = { "vim" },
-              },
-              completion = {
-                callSnippet = "Replace",
-              },
-            },
-          },
-        })
-      end,
+    vim.diagnostic.config({
+      signs = {
+        text = {
+          [vim.diagnostic.severity.ERROR] = signs.Error,
+          [vim.diagnostic.severity.WARN] = signs.Warn,
+          [vim.diagnostic.severity.HINT] = signs.Hint,
+          [vim.diagnostic.severity.INFO] = signs.Info,
+        },
+      },
     })
+
+    -- Setup mason-lspconfig with automatic_enable (v2.0.0+ feature)
+    mason_lspconfig.setup({
+      ensure_installed = {
+        "lua_ls",
+        "ts_ls", -- TypeScript/JavaScript language server
+        "eslint", -- ESLint language server
+        "jsonls", -- JSON language server
+        "html", -- HTML language server
+        "cssls", -- CSS language server
+        "tailwindcss", -- Tailwind CSS language server
+        "graphql",
+        "emmet_ls",
+        -- Add other servers you want to install automatically
+      },
+      automatic_enable = true, -- Automatically enable installed servers
+    })
+
+    -- Configure servers using vim.lsp.config (new v0.11+ API) or lspconfig
+    -- Note: Some servers may not have migrated to vim.lsp.config yet, so we use lspconfig for those
+
+    -- Configure lua server (lua_ls) using vim.lsp.config
+    vim.lsp.config("lua_ls", {
+      capabilities = capabilities,
+      settings = {
+        Lua = {
+          -- make the language server recognize "vim" global
+          diagnostics = {
+            globals = { "vim" },
+          },
+          completion = {
+            callSnippet = "Replace",
+          },
+        },
+      },
+    })
+
+    -- Configure TypeScript/JavaScript server using lspconfig
+    lspconfig["ts_ls"].setup({
+      capabilities = capabilities,
+      settings = {
+        typescript = {
+          inlayHints = {
+            includeInlayParameterNameHints = "all",
+            includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+            includeInlayFunctionParameterTypeHints = true,
+            includeInlayVariableTypeHints = true,
+            includeInlayPropertyDeclarationTypeHints = true,
+            includeInlayFunctionLikeReturnTypeHints = true,
+            includeInlayEnumMemberValueHints = true,
+          },
+        },
+        javascript = {
+          inlayHints = {
+            includeInlayParameterNameHints = "all",
+            includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+            includeInlayFunctionParameterTypeHints = true,
+            includeInlayVariableTypeHints = true,
+            includeInlayPropertyDeclarationTypeHints = true,
+            includeInlayFunctionLikeReturnTypeHints = true,
+            includeInlayEnumMemberValueHints = true,
+          },
+        },
+      },
+    })
+
+    -- Configure ESLint language server using lspconfig
+    lspconfig["eslint"].setup({
+      capabilities = capabilities,
+      settings = {
+        codeAction = {
+          disableRuleComment = {
+            enable = true,
+            location = "separateLine"
+          },
+          showDocumentation = {
+            enable = true
+          }
+        },
+        codeActionOnSave = {
+          enable = false,
+          mode = "all"
+        },
+        experimental = {
+          useFlatConfig = false
+        },
+        format = true,
+        nodePath = "",
+        onIgnoredFiles = "off",
+        problems = {
+          shortenToSingleLine = false
+        },
+        quiet = false,
+        rulesCustomizations = {},
+        run = "onType",
+        useESLintClass = false,
+        validate = "on",
+        workingDirectory = {
+          mode = "location"
+        }
+      },
+    })
+
+    -- Configure JSON language server using lspconfig
+    lspconfig["jsonls"].setup({
+      capabilities = capabilities,
+      settings = {
+        json = {
+          schemas = require('schemastore').json.schemas(),
+          validate = { enable = true },
+        },
+      },
+    })
+
+    -- Configure HTML language server using lspconfig
+    lspconfig["html"].setup({
+      capabilities = capabilities,
+      filetypes = { "html", "templ" },
+    })
+
+    -- Configure CSS language server using lspconfig
+    lspconfig["cssls"].setup({
+      capabilities = capabilities,
+    })
+
+    -- Configure Tailwind CSS language server using lspconfig
+    lspconfig["tailwindcss"].setup({
+      capabilities = capabilities,
+    })
+
+    -- Configure graphql language server using lspconfig
+    lspconfig["graphql"].setup({
+      capabilities = capabilities,
+      filetypes = { "graphql", "gql", "typescriptreact", "javascriptreact" },
+    })
+
+    -- Configure emmet language server using lspconfig
+    lspconfig["emmet_ls"].setup({
+      capabilities = capabilities,
+      filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
+    })
+
   end,
 }
-
