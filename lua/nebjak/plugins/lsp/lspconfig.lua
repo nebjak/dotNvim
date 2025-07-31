@@ -85,20 +85,60 @@ return {
       },
     })
 
+    -- Function to check if eslint config exists
+    local function has_eslint_config()
+      local config_files = {
+        ".eslintrc.js",
+        ".eslintrc.cjs",
+        ".eslintrc.yaml",
+        ".eslintrc.yml",
+        ".eslintrc.json",
+        "eslint.config.js",
+        "eslint.config.mjs",
+        "eslint.config.cjs",
+      }
+
+      for _, config_file in ipairs(config_files) do
+        if vim.fn.findfile(config_file, ".;") ~= "" then
+          return true
+        end
+      end
+
+      -- Check package.json for eslintConfig
+      local package_json = vim.fn.findfile("package.json", ".;")
+      if package_json ~= "" then
+        local ok, content = pcall(vim.fn.readfile, package_json)
+        if ok and content then
+          local package_content = table.concat(content, "\n")
+          if package_content:match('"eslintConfig"') then
+            return true
+          end
+        end
+      end
+
+      return false
+    end
+
     -- Setup mason-lspconfig with automatic_enable (v2.0.0+ feature)
+    local ensure_installed = {
+      "lua_ls",
+      "ts_ls", -- TypeScript/JavaScript language server
+      "jsonls", -- JSON language server
+      "html", -- HTML language server
+      "cssls", -- CSS language server
+      "tailwindcss", -- Tailwind CSS language server
+      "graphql",
+      "emmet_ls",
+      -- Add other servers you want to install automatically
+    }
+
+    -- Only add eslint if config exists
+    if has_eslint_config() then
+      table.insert(ensure_installed, "eslint")
+    end
+
     mason_lspconfig.setup({
-      ensure_installed = {
-        "lua_ls",
-        "ts_ls", -- TypeScript/JavaScript language server
-        "eslint", -- ESLint language server
-        "jsonls", -- JSON language server
-        "html", -- HTML language server
-        "cssls", -- CSS language server
-        "tailwindcss", -- Tailwind CSS language server
-        "graphql",
-        "emmet_ls",
-        -- Add other servers you want to install automatically
-      },
+      ensure_installed = ensure_installed,
       automatic_enable = true, -- Automatically enable installed servers
     })
 
@@ -150,49 +190,51 @@ return {
       },
     })
 
-    -- Configure ESLint language server using lspconfig
-    lspconfig["eslint"].setup({
-      capabilities = capabilities,
-      settings = {
-        codeAction = {
-          disableRuleComment = {
-            enable = true,
-            location = "separateLine"
+    -- Configure ESLint language server using lspconfig (only if config exists)
+    if has_eslint_config() then
+      lspconfig["eslint"].setup({
+        capabilities = capabilities,
+        settings = {
+          codeAction = {
+            disableRuleComment = {
+              enable = true,
+              location = "separateLine",
+            },
+            showDocumentation = {
+              enable = true,
+            },
           },
-          showDocumentation = {
-            enable = true
-          }
+          codeActionOnSave = {
+            enable = false,
+            mode = "all",
+          },
+          experimental = {
+            useFlatConfig = false,
+          },
+          format = true,
+          nodePath = "",
+          onIgnoredFiles = "off",
+          problems = {
+            shortenToSingleLine = false,
+          },
+          quiet = false,
+          rulesCustomizations = {},
+          run = "onType",
+          useESLintClass = false,
+          validate = "on",
+          workingDirectory = {
+            mode = "location",
+          },
         },
-        codeActionOnSave = {
-          enable = false,
-          mode = "all"
-        },
-        experimental = {
-          useFlatConfig = false
-        },
-        format = true,
-        nodePath = "",
-        onIgnoredFiles = "off",
-        problems = {
-          shortenToSingleLine = false
-        },
-        quiet = false,
-        rulesCustomizations = {},
-        run = "onType",
-        useESLintClass = false,
-        validate = "on",
-        workingDirectory = {
-          mode = "location"
-        }
-      },
-    })
+      })
+    end
 
     -- Configure JSON language server using lspconfig
     lspconfig["jsonls"].setup({
       capabilities = capabilities,
       settings = {
         json = {
-          schemas = require('schemastore').json.schemas(),
+          schemas = require("schemastore").json.schemas(),
           validate = { enable = true },
         },
       },
@@ -225,6 +267,5 @@ return {
       capabilities = capabilities,
       filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
     })
-
   end,
 }
