@@ -8,9 +8,6 @@ return {
     "b0o/schemastore.nvim", -- JSON schemas for jsonls
   },
   config = function()
-    -- import lspconfig plugin
-    local lspconfig = require("lspconfig")
-
     -- import mason_lspconfig plugin
     local mason_lspconfig = require("mason-lspconfig")
 
@@ -161,8 +158,8 @@ return {
       },
     })
 
-    -- Configure TypeScript/JavaScript server using lspconfig
-    lspconfig["ts_ls"].setup({
+    -- Configure TypeScript/JavaScript server using vim.lsp.config
+    vim.lsp.config("ts_ls", {
       capabilities = capabilities,
       settings = {
         typescript = {
@@ -190,9 +187,9 @@ return {
       },
     })
 
-    -- Configure ESLint language server using lspconfig (only if config exists)
+    -- Configure ESLint language server using vim.lsp.config (only if config exists)
     if has_eslint_config() then
-      lspconfig["eslint"].setup({
+      vim.lsp.config("eslint", {
         capabilities = capabilities,
         settings = {
           codeAction = {
@@ -229,8 +226,8 @@ return {
       })
     end
 
-    -- Configure JSON language server using lspconfig
-    lspconfig["jsonls"].setup({
+    -- Configure JSON language server using vim.lsp.config
+    vim.lsp.config("jsonls", {
       capabilities = capabilities,
       settings = {
         json = {
@@ -240,30 +237,30 @@ return {
       },
     })
 
-    -- Configure HTML language server using lspconfig
-    lspconfig["html"].setup({
+    -- Configure HTML language server using vim.lsp.config
+    vim.lsp.config("html", {
       capabilities = capabilities,
       filetypes = { "html", "templ" },
     })
 
-    -- Configure CSS language server using lspconfig
-    lspconfig["cssls"].setup({
+    -- Configure CSS language server using vim.lsp.config
+    vim.lsp.config("cssls", {
       capabilities = capabilities,
     })
 
-    -- Configure Tailwind CSS language server using lspconfig
-    lspconfig["tailwindcss"].setup({
+    -- Configure Tailwind CSS language server using vim.lsp.config
+    vim.lsp.config("tailwindcss", {
       capabilities = capabilities,
     })
 
-    -- Configure graphql language server using lspconfig
-    lspconfig["graphql"].setup({
+    -- Configure graphql language server using vim.lsp.config
+    vim.lsp.config("graphql", {
       capabilities = capabilities,
       filetypes = { "graphql", "gql", "typescriptreact", "javascriptreact" },
     })
 
-    -- Configure emmet language server using lspconfig
-    lspconfig["emmet_ls"].setup({
+    -- Configure emmet language server using vim.lsp.config
+    vim.lsp.config("emmet_ls", {
       capabilities = capabilities,
       filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
     })
