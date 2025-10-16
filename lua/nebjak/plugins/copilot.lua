@@ -4,7 +4,7 @@ return {
   event = "InsertEnter", -- or "BufReadPre" to load sooner
   config = function()
     require("copilot").setup({
-      copilot_model = "claude-3.7",
+      copilot_model = "claude-4.5",
       suggestion = {
         enabled = true,
         auto_trigger = true,
